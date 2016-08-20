@@ -3,15 +3,17 @@ package line
 import (
 	"encoding/json"
 	"errors"
-	"log"
+
+	"github.com/golang/glog"
 )
 
+// Custom error
 var (
-	ELSHORT     = errors.New("Line too short")
-	ELMALFORMED = errors.New("Malformed line")
-	ELIGNORE    = errors.New("Ignore this line")
+	ErrLineShort     = errors.New("line too short")
+	ErrLineMalformed = errors.New("malformed line")
 )
 
+// Line represent an IRC line
 type Line struct {
 	ChatBotId int
 	Raw       string
@@ -23,17 +25,32 @@ type Line struct {
 	Content   string
 	IsCTCP    bool
 	Channel   string
+	BotNick   string
 }
 
-func (self *Line) String() string {
-	return string(self.AsJson())
-}
-
-// Current line as json
-func (self *Line) AsJson() []byte {
-	jsonData, err := json.Marshal(self)
+// NewFromJSON returns a pointer to line
+func NewFromJSON(b []byte) (*Line, error) {
+	var l Line
+	err := json.Unmarshal(b, &l)
 	if err != nil {
-		log.Println("Error on json Marshal of "+self.Raw, err)
+		glog.Errorln("An error occured while unmarshalling the line")
+		return nil, err
+	}
+	glog.V(2).Infoln("line", l)
+	return &l, nil
+
+}
+
+// String returns a JSON string
+func (l *Line) String() string {
+	return string(l.JSON())
+}
+
+// JSON returns a JSON []byte
+func (l *Line) JSON() []byte {
+	jsonData, err := json.Marshal(l)
+	if err != nil {
+		glog.Infoln("Error on json Marshal of "+l.Raw, err)
 	}
 	// client expects lines to have an ending
 	jsonData = append(jsonData, '\n')
